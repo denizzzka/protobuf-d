@@ -139,7 +139,7 @@ import std.traits: Signed, Unsigned, isIntegral, isSigned, isUnsigned;
  * Encodes a number into its zigzag encoding
  *
  * Params:
- *  	src = The raw integer to encode
+ *      src = The raw integer to encode
  * Returns: The zigzag-encoded value
  */
 Unsigned!T zigZag(T)(in T src) pure nothrow @safe @nogc
@@ -168,7 +168,7 @@ unittest
  * Decodes a number from its zigzag encoding
  *
  * Params:
- *  	src = The zigzag-encoded value to decode
+ *      src = The zigzag-encoded value to decode
  * Returns: The raw integer
  */
 Signed!T zagZig(T)(in T src) pure nothrow @safe @nogc
