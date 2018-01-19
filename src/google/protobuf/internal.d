@@ -76,34 +76,88 @@ unittest
     assert(Varint(long.min).array == [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01]);
 }
 
-long fromVarint(R)(ref R inputRange)
-if (isInputRange!R)
+//~ long fromVarint(R)(ref R inputRange)
+//~ if (isInputRange!R)
+//~ {
+    //~ import std.exception : enforce;
+    //~ import std.range : empty, front, popFront;
+    //~ import std.traits : Unqual, Unsigned;
+
+    //~ static assert(is(ElementType!R == ubyte), "Input range should be an ubyte range");
+
+    //~ alias E = Unqual!(Unsigned!(ElementType!R));
+
+    //~ size_t i = 0;
+    //~ long result = 0;
+    //~ E data;
+
+    //~ do
+    //~ {
+        //~ enforce!ProtobufException(!inputRange.empty, "Truncated message");
+        //~ data = cast(E) inputRange.front;
+        //~ inputRange.popFront;
+
+        //~ if (i == 9)
+            //~ enforce!ProtobufException(!(data & 0xfe), "Malformed varint encoding");
+
+        //~ result |= cast(long) (data & 0x7f) << (i++ * 7);
+    //~ } while (data & 0x80);
+
+    //~ return result;
+//~ }
+
+/**
+ * Decode a VarInt-encoded series of bytes into an unsigned value
+ *
+ * Params:
+ *      T = return type
+ *      src = The data stream
+ * Returns: The decoded value
+ */
+T fromVarint2(T, R)(ref R src)
+if(isInputRange!R && is(ElementType!R : const ubyte) &&
+    isIntegral!T && isUnsigned!T)
 {
     import std.exception : enforce;
-    import std.range : empty, front, popFront;
-    import std.traits : Unqual, Unsigned;
 
-    static assert(is(ElementType!R == ubyte), "Input range should be an ubyte range");
+    enforce!ProtobufException(src.length != 0, "Empty VarInt message");
 
-    alias E = Unqual!(Unsigned!(ElementType!R));
+    immutable ubyte mask = 0b_0111_1111;
+    T ret;
 
-    size_t i = 0;
-    long result = 0;
-    E data;
-
-    do
+    size_t offset;
+    foreach(val; src)
     {
-        enforce!ProtobufException(!inputRange.empty, "Truncated message");
-        data = cast(E) inputRange.front;
-        inputRange.popFront;
+        ret |= cast(T)(val & mask) << offset;
 
-        if (i == 9)
-            enforce!ProtobufException(!(data & 0xfe), "Malformed varint encoding");
+        enforce!ProtobufException(
+                offset < T.sizeof * 8,
+                "Malformed VarInt: value is too big for the type "~T.stringof
+            );
 
-        result |= cast(long) (data & 0x7f) << (i++ * 7);
-    } while (data & 0x80);
+        offset += 7;
+    }
 
-    return result;
+    return ret;
+}
+
+/**
+ * Decode a VarInt-encoded series of bytes into a signed value
+ *
+ * Params:
+ *      T = return type
+ *  	src = The data stream
+ * Returns: The decoded value
+ */
+T fromVarint(T = long, R)(R src) //TODO: long should be removed
+if(isInputRange!R && is(ElementType!R : const ubyte) &&
+    isIntegral!T && isSigned!T)
+{
+    import std.conv: to;
+
+	long r = fromVarint2!ulong(src);
+
+	return r.to!T; // "to" is need for overflow test
 }
 
 unittest
