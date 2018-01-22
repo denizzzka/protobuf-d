@@ -135,7 +135,7 @@ if(isInputRange!R && is(ElementType!R : const ubyte) &&
 
         const bool msb = (val & inv_mask) != 0;
         enforce!ProtobufException(
-                msb == (i == src.length-1),
+                msb == (i != src.length-1),
                 "Malformed VarInt: wrong MSB"
             );
 
