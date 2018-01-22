@@ -114,20 +114,31 @@ unittest
  *      src = The data stream
  * Returns: The decoded value
  */
-T fromVarint2(T, R)(ref R src)
+T fromVarint2(T, R)(in ref R src)
 if(isInputRange!R && is(ElementType!R : const ubyte) &&
     isIntegral!T && isUnsigned!T)
 {
     import std.exception : enforce;
 
     enforce!ProtobufException(src.length != 0, "Empty VarInt message");
+    enforce!ProtobufException(src.length <= ubyte.max, "VarInt length is too big"); //TODO: can be replaced by checkedint counters
 
     immutable ubyte mask = 0b_0111_1111;
-    T ret;
+    immutable ubyte inv_mask = !mask;
 
-    size_t offset;
-    foreach(val; src)
+    T ret;
+    ubyte offset;
+
+    for(ubyte i = 0; i < src.length; i++)
     {
+        const ubyte val = src[i];
+
+        const bool msb = (val & inv_mask) != 0;
+        enforce!ProtobufException(
+                msb == (i == src.length-1),
+                "Malformed VarInt: wrong MSB"
+            );
+
         ret |= cast(T)(val & mask) << offset;
 
         enforce!ProtobufException(
