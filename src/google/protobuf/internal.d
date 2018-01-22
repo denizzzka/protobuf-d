@@ -121,7 +121,7 @@ if(isInputRange!R && is(ElementType!R : const ubyte) &&
     import std.exception : enforce;
 
     enforce!ProtobufException(src.length != 0, "Empty VarInt message");
-    enforce!ProtobufException(src.length <= ubyte.max, "VarInt length is too big"); //TODO: can be replaced by checkedint counters
+    enforce!ProtobufException(src.length <= ubyte.max, "VarInt length is too big");
 
     immutable ubyte mask = 0b_0111_1111;
     immutable ubyte inv_mask = !mask;
